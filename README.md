@@ -1,4 +1,4 @@
-##Approach
+## Approach
 
 Add layouts array to `$cmb->add_field()` that will let users add different kinds of layouts consisting of text fields, image fields, etc.
 
