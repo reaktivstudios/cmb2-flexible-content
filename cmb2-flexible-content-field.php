@@ -31,7 +31,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 		public function render_fields( $field, $escaped_value, $object_id, $object_type, $field_type ) {
 			$metabox = $field->get_cmb();
 
-
+			// error_log( print_r( get_post_meta( 2, 'modular-page-builder-data', true ), true ) );
 			$layouts = array(
 				'text' => array(
 					'title' => 'Text Group',
@@ -65,80 +65,110 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 				),
 			);
 
-			// 'flexible_field_key'
 			$data = array(
-				'first_group_id' => 'text',
-				'second_group_id' => 'text',
+				array(
+					'layout' => 'text',
+					'values' => array(
+						'title' => 'title value',
+						'description' => 'description value'
+					),
+				),
+				array(
+					'layout' => 'text',
+					'values' => array(
+						'title' => 'title value 2',
+						'description' => 'description value 2'
+					),
+				)
 			);
 
+			// Store these so tehy can accessed in the hook
+			$this->stored_data = $data;
 			$prefix = $field->_id() . '_';
+			$this->prefix = $prefix;
 
-			foreach( $data as $group_id => $layout ) {
-				$layout_data = $layouts[ $layout ];
+			foreach( $data_2 as $i => $group ) {
+				$layout_data = $layouts[ $group['layout'] ];
 				$layout_fields = $layout_data['fields'];
+				$group_id = $prefix . $i;
 
-
-				// Create an initial Group based on our data.
 				$group_args = array(
-					'id' => $prefix . $group_id,
+					'id' => $group_id,
 					'type' => 'group'
 				);
-				$create_group = $metabox->add_field( $group_args );
+
+				$group_name = $metabox->add_field( $group_args );
 				$group_args['fields'] = array();
 
-
-
-
-				// Get the fields that are needed for this group and add each of them as a subfield on the group.
-				foreach ( $layout_fields as $subfield ) {
+				foreach( $layout_fields as $subfield ) {
 					$subfield_args = array(
 						'id' => $subfield['id'],
 						'type' => $subfield['type'],
 						'name' => $subfield['name']
 					);
-
-					$subfield_id = $metabox->add_group_field( $create_group, $subfield_args );
+					$subfield_id = $metabox->add_group_field( $group_name, $subfield_args );
 					$group_args['fields'][ $subfield['id'] ] = $subfield_args;
 				}
 
-
-
-
-				// Add some default settings and render it all out to the page.
 				$group_args['context'] = 'normal';
 				$group_args['show_names'] = true;
+
+				add_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'correct_value'), 10, 4 );
 				$metabox->render_group( $group_args );
 			}
 
+			// $prefix = $field->_id() . '_';
 
-			// $prefix = $field->cmb_id;
-			// foreach ( $data as $i => $layout_object ) {
-			// 	$layout_object_id = $metabox->add_field( array(
-			// 		'id' => 'flexible_prefix_first_group',
-			// 		'type' => 'group',
-			// 		'options' => array(
-			// 			'group_title' => 'Flexible Group ' . $i,
-			// 			'add_button' => 'Add Another',
-			// 			'remove_button' => 'Remove',
-			// 			'sortable' => true,
-			// 		),
-			// 	) );
+			// foreach( $data as $group_id => $layout ) {
+			// 	$layout_data = $layouts[ $layout ];
+			// 	$layout_fields = $layout_data['fields'];
 
-			// 	foreach( $layout_object['fields'] as $j => $subfield ) {
-			// 		$metabox->add_group_field( $layout_object_id, array(
-			// 			'name' => 'Flexible Group Text ' . $j,
-			// 			'id' =>  $j,
-			// 			'type' => 'textarea',
-			// 		) );
+
+			// 	// Create an initial Group based on our data.
+			// 	$group_args = array(
+			// 		'id' => $prefix . $group_id,
+			// 		'type' => 'group'
+			// 	);
+			// 	$create_group = $metabox->add_field( $group_args );
+			// 	$group_args['fields'] = array();
+
+
+
+
+			// 	// Get the fields that are needed for this group and add each of them as a subfield on the group.
+			// 	foreach ( $layout_fields as $subfield ) {
+			// 		$subfield_args = array(
+			// 			'id' => $subfield['id'],
+			// 			'type' => $subfield['type'],
+			// 			'name' => $subfield['name']
+			// 		);
+
+			// 		$subfield_id = $metabox->add_group_field( $create_group, $subfield_args );
+			// 		$group_args['fields'][ $subfield['id'] ] = $subfield_args;
 			// 	}
 
-			// 	$layout_object_field = $metabox->get_field( $layout_object_id );
-
-			// 	// add_filter( 'cmb2_override_test_metabox_2_0_meta_value', array( $this, 'return_meta_value') );
 
 
-			// 	$metabox->render_group_row( $layout_object_field, true );
+
+			// 	// Add some default settings and render it all out to the page.
+			// 	$group_args['context'] = 'normal';
+			// 	$group_args['show_names'] = true;
+
+			// 	// Get all post meta
+			// 	// Add some sort of filter
+			// 	// Filter each one
+				
+			// 	add_filter( 'cmb2_override_my-prefix_flexible_first_group_id_meta_value', array( $this, 'correct_value' ), 10, 4 );
+			// 	$metabox->render_group( $group_args );
 			// }
+
+
+		}
+
+		public function correct_value( $data, $object_id, $a, $object ) {
+			$array_key = absint( str_replace( $this->prefix, '', $a['field_id'] ) );
+			$data = $this->stored_data[ $array_key ];
+			return array( $data['values'] );
 		}
 
 		public function save_fields( $override_value, $value, $object_id, $field_args ) {
