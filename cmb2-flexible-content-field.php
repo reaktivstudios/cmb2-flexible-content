@@ -65,19 +65,6 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 				),
 			);
 
-
-			// $data = array(
-			// 	array(
-			// 		'layout' => 'text',
-			// 		'fields' => array(
-			// 			'title' => 'This is some sample title',
-			// 			'description' => 'This is a sample description'
-			// 		)
-			// 	)
-			// );
-
-
-
 			// 'flexible_field_key'
 			$data = array(
 				'first_group_id' => 'text',
@@ -90,16 +77,19 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 				$layout_data = $layouts[ $layout ];
 				$layout_fields = $layout_data['fields'];
 
+
+				// Create an initial Group based on our data.
 				$group_args = array(
 					'id' => $prefix . $group_id,
 					'type' => 'group'
 				);
-
-				// error_log( print_r( $prefix . $group_id, true ) );
 				$create_group = $metabox->add_field( $group_args );
-
 				$group_args['fields'] = array();
 
+
+
+
+				// Get the fields that are needed for this group and add each of them as a subfield on the group.
 				foreach ( $layout_fields as $subfield ) {
 					$subfield_args = array(
 						'id' => $subfield['id'],
@@ -111,12 +101,13 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 					$group_args['fields'][ $subfield['id'] ] = $subfield_args;
 				}
 
+
+
+
+				// Add some default settings and render it all out to the page.
 				$group_args['context'] = 'normal';
 				$group_args['show_names'] = true;
-
 				$metabox->render_group( $group_args );
-				//$group_field = $metabox->get_field( $create_group );
-				//$metabox->render_group_row( $group_field, true );
 			}
 
 
@@ -151,7 +142,6 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 		}
 
 		public function save_fields( $override_value, $value, $object_id, $field_args ) {
-			$_POST
 			return '';
 		}
 
