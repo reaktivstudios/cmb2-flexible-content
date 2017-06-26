@@ -74,8 +74,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				return false;
 			}
 
-			// Stubbed data.
-			// This is what data should look like when getting it from the database.
+			// These are the values from the fields
 			$data = $field_type->field->value;
 
 			// Store these so they can accessed in the hook.
@@ -110,6 +109,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 					$group_args['fields'][ $subfield['id'] ] = $subfield_args;
 				}
 
+				// Add hidden field with the layout type
 				echo '<input id="' . $group_id . '[layout]" name="' . $group_id . '[layout]" value="' . $group['layout'] . '" type="hidden" >';
 
 				// Set some necessary defaults.
