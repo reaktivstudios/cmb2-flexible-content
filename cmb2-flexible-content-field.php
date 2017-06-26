@@ -31,7 +31,6 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 		public function render_fields( $field, $escaped_value, $object_id, $object_type, $field_type ) {
 			$metabox = $field->get_cmb();
 
-			// error_log( print_r( get_post_meta( 2, 'modular-page-builder-data', true ), true ) );
 			$layouts = array(
 				'text' => array(
 					'title' => 'Text Group',
@@ -87,14 +86,16 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 			$prefix = $field->_id() . '_';
 			$this->prefix = $prefix;
 
-			foreach( $data_2 as $i => $group ) {
+			foreach( $data as $i => $group ) {
 				$layout_data = $layouts[ $group['layout'] ];
 				$layout_fields = $layout_data['fields'];
 				$group_id = $prefix . $i;
+				$group_id = $field->_id() . '[' . $i . ']';
 
 				$group_args = array(
-					'id' => $group_id,
-					'type' => 'group'
+					'id' => $field->_id() . '[' . $i . ']',
+					'type' => 'group',
+					'array_key' => absint( $i ),
 				);
 
 				$group_name = $metabox->add_field( $group_args );
@@ -104,7 +105,8 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 					$subfield_args = array(
 						'id' => $subfield['id'],
 						'type' => $subfield['type'],
-						'name' => $subfield['name']
+						'name' => $subfield['name'],
+						'array_key' => absint( $i ),
 					);
 					$subfield_id = $metabox->add_group_field( $group_name, $subfield_args );
 					$group_args['fields'][ $subfield['id'] ] = $subfield_args;
@@ -115,6 +117,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 
 				add_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'correct_value'), 10, 4 );
 				$metabox->render_group( $group_args );
+				// remove_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'correct_value' ) );
 			}
 
 			// $prefix = $field->_id() . '_';
@@ -166,12 +169,18 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false  ) ) {
 		}
 
 		public function correct_value( $data, $object_id, $a, $object ) {
-			$array_key = absint( str_replace( $this->prefix, '', $a['field_id'] ) );
-			$data = $this->stored_data[ $array_key ];
-			return array( $data['values'] );
+			if ( isset( $object->args['array_key'] ) ) {
+
+				$array_key = absint( $object->args['array_key'] );
+				$data = $this->stored_data[ $array_key ];
+				$data = array( $data['values'] );
+			}
+			return $data;
 		}
 
 		public function save_fields( $override_value, $value, $object_id, $field_args ) {
+
+			// Get the value and then sanitize it according to sanitization rules.
 			return '';
 		}
 
