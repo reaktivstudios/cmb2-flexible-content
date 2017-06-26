@@ -25,6 +25,8 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		protected static $instance;
 
+		protected $stored_data;
+
 		/**
 		 * Set up static instance of class
 		 *
@@ -74,24 +76,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 
 			// Stubbed data.
 			// This is what data should look like when getting it from the database.
-			$data = array(
-				array(
-					'layout' => 'text',
-					'values' => array(
-						'title' => 'title value',
-						'description' => 'description value',
-					),
-				),
-				array(
-					'layout' => 'text',
-					'values' => array(
-						'title' => 'title value 2',
-						'description' => 'description value 2',
-					),
-				),
-			);
+			$data = $field_type->field->value;
 
-			// Store these so tehy can accessed in the hook.
+			// Store these so they can accessed in the hook.
 			$this->stored_data = $data;
 
 			$field_id = $field->_id();
@@ -123,12 +110,15 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 					$group_args['fields'][ $subfield['id'] ] = $subfield_args;
 				}
 
+				echo '<input id="' . $group_id . '[layout]" name="' . $group_id . '[layout]" value="' . $group['layout'] . '" type="hidden" >';
+
 				// Set some necessary defaults.
 				$group_args['context'] = 'normal';
 				$group_args['show_names'] = true;
 
 				add_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'override_meta_value' ), 10, 4 );
-				$metabox->render_group( $group_args );
+				$field_group = $metabox->get_field( $group_name );
+				$metabox->render_group_row( $field_group, false );
 				remove_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'override_meta_value' ) );
 			}
 
@@ -145,10 +135,8 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		public function override_meta_value( $data, $object_id, $a, $object ) {
 			if ( isset( $object->args['array_key'] ) ) {
-
 				$array_key = absint( $object->args['array_key'] );
 				$data = $this->stored_data[ $array_key ];
-				$data = array( $data['values'] );
 			}
 			return $data;
 		}
@@ -164,7 +152,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		public function save_fields( $override_value, $value, $object_id, $field_args ) {
 			// Get the value and then sanitize it according to sanitization rules.
-			return '';
+			return $value;
 		}
 
 	}
