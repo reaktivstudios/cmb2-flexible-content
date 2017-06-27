@@ -30,7 +30,6 @@
 
 			success: function( response ) {
 				var el = response.data;
-				console.log( flexible_rows );
 				flexible_rows.append( el );
 			}
 		});
