@@ -110,7 +110,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				}
 
 				// Add hidden field with the layout type
-				echo '<input id="' . $group_id . '[layout]" name="' . $group_id . '[layout]" value="' . $group['layout'] . '" type="hidden" >';
+				echo '<input id="' . esc_attr( $group_id ) . '[layout]" name="' . esc_attr( $group_id ) . '[layout]" value="' . esc_attr( $group['layout'] ) . '" type="hidden" >';
 
 				// Set some necessary defaults.
 				$group_args['context'] = 'normal';
