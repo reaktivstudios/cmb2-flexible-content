@@ -7,8 +7,13 @@
 		var flexible_group = button.closest( '.cmb-flexible-group' );
 		var field_id = flexible_group.data( 'fieldid' );
 		var type = button.attr( 'data-type' );
+		var flexible_rows = flexible_group.find( '.cmb-flexible-rows' ).last();
 		var latest = flexible_group.find( '.cmb-flexible-row' ).last();
-		var latest_index = latest.data( 'groupindex' ); 
+		var latest_index;
+
+		if ( latest.length > 0 ) {
+			latest_index = latest.data( 'groupindex' ); 
+		}
 
 
 		$.ajax({
@@ -25,7 +30,8 @@
 
 			success: function( response ) {
 				var el = response.data;
-				latest.after( el );
+				console.log( flexible_rows );
+				flexible_rows.append( el );
 			}
 		});
 	} );

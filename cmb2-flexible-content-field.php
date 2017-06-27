@@ -26,6 +26,13 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		protected static $instance;
 
 		/**
+		 * Stored data to be passed to filter
+		 *
+		 * @var array
+		 */
+		protected $stored_data;
+
+		/**
 		 * Set up static instance of class
 		 *
 		 * @return class RKV_CMB2_Flexible_Content_Field instance
@@ -44,6 +51,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		private function init() {
 			add_action( 'cmb2_render_flexible', array( $this, 'render_fields' ), 10, 5 );
 			add_filter( 'cmb2_sanitize_flexible', array( $this, 'save_fields' ), 12, 4 );
+			add_filter( 'cmb2_types_esc_flexible', array( $this, 'escape_values' ), 10, 2 );
 
 			add_action( 'admin_enqueue_scripts', array( $this, 'add_scripts' ) );
 			add_action( 'wp_ajax_get_flexible_content_row', array( $this, 'handle_ajax' ) );
@@ -78,73 +86,26 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				return false;
 			}
 
-			// Stubbed data.
-			// This is what data should look like when getting it from the database.
-			$data = array(
-				array(
-					'layout' => 'text',
-					'values' => array(
-						'title' => 'title value',
-						'description' => 'description value',
-					)
-				),
-				array(
-					'layout' => 'text',
-					'values' => array(
-						'title' => 'title value 2',
-						'description' => 'description value 2',
-					)
-				),
-			);
+			// These are the values from the fields.
+			$data = $field_type->field->value;
 
-			// Store these so tehy can accessed in the hook.
+			// Store these so they can accessed in the hook.
 			$this->stored_data = $data;
 
 			$field_id = $field->_id();
 			echo '<div class="cmb-flexible-group" data-fieldid="' . esc_attr( $field_id ) . '">';
+			echo '<div class="cmb-flexible-rows">';
 
-			foreach ( $data as $i => $group ) {
-				$layout_data = $layouts[ $group['layout'] ];
-				$layout_fields = $layout_data['fields'];
-				$group_id = $field_id . '[' . $i . ']';
+			if ( ! empty( $data ) ) {
+				foreach ( $data as $i => $group_details ) {
+					$type = $group_details['layout'];
+					$group = $this->create_group( $type, $field, $i );
 
-				// Create a new group that will hold the layout group.
-				// Make sure to define the ID as an array so that it is passed to the sanitization callback
-				// The array_key should be defined on both main group field and all subfields.
-				$group_args = array(
-					'id' => $field->_id() . '[' . $i . ']',
-					'type' => 'group',
-					'array_key' => absint( $i ),
-					'repeatable' => false,
-				);
-				$group_name = $metabox->add_field( $group_args );
-				$group_args['fields'] = array();
-
-				// Foreach layout field, add a field to the group.
-				foreach ( $layout_fields as $subfield ) {
-					$subfield_args = array(
-						'id' => $subfield['id'],
-						'type' => $subfield['type'],
-						'name' => $subfield['name'],
-						'array_key' => absint( $i ),
-					);
-					$subfield_id = $metabox->add_group_field( $group_name, $subfield_args );
-					$group_args['fields'][ $subfield['id'] ] = $subfield_args;
+					$this->render_group( $metabox, $group, $type, true );
 				}
-
-				// Set some necessary defaults.
-				$group_args['context'] = 'normal';
-				$group_args['show_names'] = true;
-
-				add_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'override_meta_value' ), 10, 4 );
-				$field_group = $metabox->get_field( $group_name );
-
-				echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $i ) . '">';
-				$metabox->render_group_row( $field_group, false );
-				echo '</div>';
-				//$metabox->render_group( $group_args );
-				remove_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'override_meta_value' ) );
 			}
+
+			echo '</div>';
 
 			foreach ( $layouts as $layout_key => $layout ) {
 				echo '<button class="cmb2-add-flexible-row" data-type="' . esc_attr( $layout_key ) . '" data-objectId="' . esc_attr( $metabox_id ) . '">' . esc_attr( $layout_key ) . '</button>';
@@ -165,16 +126,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		public function override_meta_value( $data, $object_id, $a, $object ) {
 			if ( isset( $object->args['array_key'] ) ) {
-
 				$array_key = absint( $object->args['array_key'] );
 				$data = $this->stored_data[ $array_key ];
-				$data = array( $data['values'] );
 			}
-
-			// $flatenned_values = array();
-			// foreach ( $this->stored_data as $data ) {
-			// 	$flatenned_values[] = $data['values'];
-			// }
 			return $data;
 		}
 
@@ -189,7 +143,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		public function save_fields( $override_value, $value, $object_id, $field_args ) {
 			// Get the value and then sanitize it according to sanitization rules.
-			return '';
+			return $value;
 		}
 
 
@@ -215,22 +169,46 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$type = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : ''; // Input var okay.
 			$metabox_id = isset( $_POST['metabox_id'] ) ? sanitize_key( wp_unslash( $_POST['metabox_id'] ) ) : ''; // Input var okay.
 			$field_id = isset( $_POST['field_id'] ) ? sanitize_key( wp_unslash( $_POST['field_id'] ) ) : ''; // Input var okay.
-			$latest_index = isset( $_POST['latest_index'] ) ? absint( $_POST['latest_index'] ) : 0; // Input var okay.
+			$index = isset( $_POST['latest_index'] ) ? absint( $_POST['latest_index'] ) + 1 : 0; // Input var okay.
 
 			$metabox = cmb2_get_metabox( $metabox_id );
 			$field = cmb2_get_field( $metabox_id, $field_id );
-			$index = $latest_index + 1;
 			$group = $this->create_group( $type, $field, $index );
-			$group_name = $group->_id();
 
 			ob_start();
-
-			echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $index ) . '">';
-			$metabox->render_group_row( $group, false );
-			echo '</div>';
+			$this->render_group( $metabox, $group, $type );
 			$output = ob_get_clean();
 
 			wp_send_json_success( $output );
+		}
+
+		/**
+		 * Render group field wrapped in a flexible container.
+		 *
+		 * If override is set to true, also add meta value override filter
+		 *
+		 * @param  object  $metabox  Metabox instance.
+		 * @param  object  $group    Group field instance.
+		 * @param  string  $type     Layout type.
+		 * @param  boolean $override Should the layout field be added.
+		 */
+		public function render_group( $metabox, $group, $type, $override = false ) {
+			$group_name = $group->_id();
+			$index = $group->args['array_key'];
+
+			echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $index ) . '">';
+			echo '<input id="' . esc_attr( $group_name ) . '[layout]" name="' . esc_attr( $group_name ) . '[layout]" value="' . esc_attr( $type ) . '" type="hidden" >';
+
+			if ( true === $override ) {
+				add_filter( 'cmb2_override_' . $group_name . '_meta_value', array( $this, 'override_meta_value' ), 10, 4 );
+			}
+
+			$metabox->render_group_row( $group, false );
+
+			if ( true === $override ) {
+				remove_filter( 'cmb2_override_' . $group_name . '_meta_value', array( $this, 'override_meta_value' ) );
+			}
+			echo '</div>';
 		}
 
 		/**
@@ -251,6 +229,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$index = absint( $index );
 			$layout = isset( $field->args['layouts'] ) ? $field->args['layouts'][ $type ] : false;
 
+			// Create a new group that will hold the layout group.
+			// Make sure to define the ID as an array so that it is passed to the sanitization callback
+			// The array_key should be defined on both main group field and all subfields.
 			$group_id = $field_id . '[' . $index . ']';
 			$group_name = $metabox->add_field( array(
 				'id' => $group_id,
@@ -278,7 +259,20 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			return $group;
 		}
 
+		/**
+		 * Value escape before output
+		 *
+		 * @param  string $val        Escaping default value.
+		 * @param  array  $meta_value Value of metadata.
+		 * @return array             Escaped value of metadata
+		 */
+		public function escape_values( $val, $meta_value ) {
+			// Need to add a custom escaping function here.
+			// Only need to escape the layout type.
+			return $meta_value;
+		}
+
 	}
 
 	RKV_CMB2_Flexible_Content_Field::get_instance();
-}
+} // End if().
