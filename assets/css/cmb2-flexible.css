@@ -1,0 +1,8 @@
+.cmb-type-flexible .cmb-th, .cmb-type-flexible .cmb-th + .cmb-td {
+	float: none;
+	width: 100%;
+}
+
+.cmb-type-flexible .cmb-group-title {
+	background-color: #e9e9e9;
+}
