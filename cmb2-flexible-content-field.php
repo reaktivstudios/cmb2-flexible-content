@@ -241,6 +241,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				// TODO: Set these with field defaults.
 				'context' => 'normal',
 				'show_names' => true,
+				'options' => array(
+					'group_title' => $layout[ 'title' ],
+				),
 			) );
 
 			// Foreach layout field, add a field to the group.
