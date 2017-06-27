@@ -44,6 +44,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		private function init() {
 			add_action( 'cmb2_render_flexible', array( $this, 'render_fields' ), 10, 5 );
 			add_filter( 'cmb2_sanitize_flexible', array( $this, 'save_fields' ), 12, 4 );
+
+			add_action( 'admin_enqueue_scripts', array( $this, 'add_scripts' ) );
+			add_action( 'wp_ajax_get_flexible_content_row', array( $this, 'handle_ajax' ) );
 		}
 
 		/**
@@ -65,7 +68,10 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		public function render_fields( $field, $escaped_value, $object_id, $object_type, $field_type ) {
 			$metabox = $field->get_cmb();
+			$metabox_id = $metabox->cmb_id;
 			$layouts = isset( $field->args['layouts'] ) ? $field->args['layouts'] : false;
+
+			$this->layouts = $layouts;
 
 			if ( false === $layouts ) {
 				// We need layouts for this to work.
@@ -80,14 +86,14 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 					'values' => array(
 						'title' => 'title value',
 						'description' => 'description value',
-					),
+					)
 				),
 				array(
 					'layout' => 'text',
 					'values' => array(
 						'title' => 'title value 2',
 						'description' => 'description value 2',
-					),
+					)
 				),
 			);
 
@@ -95,6 +101,8 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$this->stored_data = $data;
 
 			$field_id = $field->_id();
+			echo '<div class="cmb-flexible-group" data-fieldid="' . esc_attr( $field_id ) . '">';
+
 			foreach ( $data as $i => $group ) {
 				$layout_data = $layouts[ $group['layout'] ];
 				$layout_fields = $layout_data['fields'];
@@ -107,6 +115,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 					'id' => $field->_id() . '[' . $i . ']',
 					'type' => 'group',
 					'array_key' => absint( $i ),
+					'repeatable' => false,
 				);
 				$group_name = $metabox->add_field( $group_args );
 				$group_args['fields'] = array();
@@ -128,9 +137,20 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$group_args['show_names'] = true;
 
 				add_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'override_meta_value' ), 10, 4 );
-				$metabox->render_group( $group_args );
+				$field_group = $metabox->get_field( $group_name );
+
+				echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $i ) . '">';
+				$metabox->render_group_row( $field_group, false );
+				echo '</div>';
+				//$metabox->render_group( $group_args );
 				remove_filter( 'cmb2_override_' . $group_id . '_meta_value', array( $this, 'override_meta_value' ) );
 			}
+
+			foreach ( $layouts as $layout_key => $layout ) {
+				echo '<button class="cmb2-add-flexible-row" data-type="' . esc_attr( $layout_key ) . '" data-objectId="' . esc_attr( $metabox_id ) . '">' . esc_attr( $layout_key ) . '</button>';
+			}
+
+			echo '</div>';
 
 		}
 
@@ -150,6 +170,11 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$data = $this->stored_data[ $array_key ];
 				$data = array( $data['values'] );
 			}
+
+			// $flatenned_values = array();
+			// foreach ( $this->stored_data as $data ) {
+			// 	$flatenned_values[] = $data['values'];
+			// }
 			return $data;
 		}
 
@@ -165,6 +190,91 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		public function save_fields( $override_value, $value, $object_id, $field_args ) {
 			// Get the value and then sanitize it according to sanitization rules.
 			return '';
+		}
+
+
+		/**
+		 * Add Flexible content scripts and styles
+		 */
+		public function add_scripts() {
+			wp_enqueue_script( 'cmb2-flexible-content', plugin_dir_url( __FILE__ ) . 'assets/js/cmb2-flexible.js', array( 'jquery', 'cmb2-scripts' ), '', true );
+		}
+
+		/**
+		 * Handle AJAX request for a new flexible row
+		 *
+		 * Creates a new group based on a few variables, renders the output
+		 * then returns it.
+		 */
+		public function handle_ajax() {
+			if ( ! ( isset( $_POST['cmb2_ajax_nonce'] ) && wp_verify_nonce( $_POST['cmb2_ajax_nonce'], 'ajax_nonce' ) ) ) {
+				die();
+			}
+
+			$type = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : ''; // Input var okay.
+			$metabox_id = isset( $_POST['metabox_id'] ) ? sanitize_key( wp_unslash( $_POST['metabox_id'] ) ) : ''; // Input var okay.
+			$field_id = isset( $_POST['field_id'] ) ? sanitize_key( wp_unslash( $_POST['field_id'] ) ) : ''; // Input var okay.
+			$latest_index = isset( $_POST['latest_index'] ) ? absint( $_POST['latest_index'] ) : 0; // Input var okay.
+
+			$metabox = cmb2_get_metabox( $metabox_id );
+			$field = cmb2_get_field( $metabox_id, $field_id );
+			$index = $latest_index + 1;
+			$group = $this->create_group( $type, $field, $index );
+			$group_name = $group->_id();
+
+			ob_start();
+
+			echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $index ) . '">';
+			$metabox->render_group_row( $group, false );
+			echo '</div>';
+			$output = ob_get_clean();
+
+			wp_send_json_success( $output );
+		}
+
+		/**
+		 * Create a group based on type and Flexible field object
+		 *
+		 * Creates a new group using the CMB API, and then dynamically
+		 * generates subfield for that group based on the layouts defined
+		 * by the user
+		 *
+		 * @param  string $type  Layout key.
+		 * @param  object $field Flexible field object.
+		 * @param  int    $index Index in group list.
+		 * @return object        New group field
+		 */
+		public function create_group( $type, $field, $index ) {
+			$field_id = $field->_id();
+			$metabox = $field->get_cmb();
+			$index = absint( $index );
+			$layout = isset( $field->args['layouts'] ) ? $field->args['layouts'][ $type ] : false;
+
+			$group_id = $field_id . '[' . $index . ']';
+			$group_name = $metabox->add_field( array(
+				'id' => $group_id,
+				'type' => 'group',
+				'array_key' => absint( $index ),
+				'repeatable' => false,
+				// TODO: Set these with field defaults.
+				'context' => 'normal',
+				'show_names' => true,
+			) );
+
+			// Foreach layout field, add a field to the group.
+			foreach ( $layout['fields'] as $subfield ) {
+				$subfield_args = array(
+					'id' => $subfield['id'],
+					'type' => $subfield['type'],
+					'name' => $subfield['name'],
+					'array_key' => absint( $index ),
+				);
+				$subfield_id = $metabox->add_group_field( $group_name, $subfield_args );
+			}
+
+			// Set some necessary defaults.
+			$group = $metabox->get_field( $group_name );
+			return $group;
 		}
 
 	}
