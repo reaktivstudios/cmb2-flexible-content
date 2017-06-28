@@ -50,7 +50,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		private function init() {
 			add_action( 'cmb2_render_flexible', array( $this, 'render_fields' ), 10, 5 );
-			add_filter( 'cmb2_sanitize_flexible', array( $this, 'save_fields' ), 12, 4 );
+			add_filter( 'cmb2_sanitize_flexible', array( $this, 'save_fields' ), 12, 5 );
 			add_filter( 'cmb2_types_esc_flexible', array( $this, 'escape_values' ), 10, 2 );
 
 			add_action( 'admin_enqueue_scripts', array( $this, 'add_scripts' ) );
@@ -149,9 +149,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * @param  array $field_args     Full list of arguments.
 		 * @return string                Data
 		 */
-		public function save_fields( $override_value, $value, $object_id, $field_args ) {
-			// Get the value and then sanitize it according to sanitization rules.
-			return $value;
+		public function save_fields( $override_value, $values, $object_id, $field_args, $sanitizer_object ) {
+
+			return $values;
 		}
 
 
