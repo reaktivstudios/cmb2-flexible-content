@@ -149,9 +149,24 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * @param  array $field_args     Full list of arguments.
 		 * @return string                Data
 		 */
-		public function save_fields( $override_value, $values, $object_id, $field_args, $sanitizer_object ) {
+		public function save_fields( $override_value, $value, $object_id, $field_args, $sanitizer_object ) {
+			// Get the value and then sanitize it according to sanitization rules.
+			if ( ! empty( $value ) ) {
+				foreach ( $value as $group ) {
+					// Get layout matching the layout of the current group
+					$fields = $field_args['layouts'][ $group['layout'] ]['fields'];
 
-			return $values;
+					// Test each field in the group against the layout field type
+					foreach ( $fields as $field ) {
+						foreach ( $group[0] as $id => $item ) {
+							if ( $field['id'] == $id ) {
+								// Filter field type
+							}
+						}
+					}
+				}
+			}
+			return $value;
 		}
 
 
