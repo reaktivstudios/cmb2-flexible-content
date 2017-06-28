@@ -112,7 +112,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			echo '<ul class="cmb-flexible-add-list hidden">';
 			foreach ( $layouts as $layout_key => $layout ) {
 				echo '<li class="cmb-flexible-add-list-item">';
-				echo '<button class="cmb2-add-flexible-row" data-type="' . esc_attr( $layout_key ) . '" data-objectId="' . esc_attr( $metabox_id ) . '">' . esc_attr( $layout_key ) . '</button>';
+				echo '<button class="cmb2-add-flexible-row" data-type="' . esc_attr( $layout_key ) . '">' . esc_attr( $layout['title'] ) . '</button>';
 				echo '</li>';
 			}
 			echo '</ul>';
@@ -217,6 +217,12 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			if ( true === $override ) {
 				remove_filter( 'cmb2_override_' . $group_name . '_meta_value', array( $this, 'override_meta_value' ) );
 			}
+
+			echo '<div class="cmb-row cmb-remove-field-row">';
+			echo '<button class="button cmb-shift-flexible-rows move-up alignleft dashicons-before dashicons-arrow-up-alt2"></button>';
+			echo '<button class="button cmb-shift-flexible-rows move-down alignleft dashicons-before dashicons-arrow-down-alt2"></button>';
+			echo '</div>';
+
 			echo '</div>';
 		}
 
