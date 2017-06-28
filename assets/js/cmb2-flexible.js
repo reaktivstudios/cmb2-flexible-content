@@ -15,7 +15,7 @@
 			latest_index = latest.data( 'groupindex' ); 
 		}
 
-
+		button.closest( '.cmb-flexible-add-list' ).addClass( 'hidden' );
 		$.ajax({
 			method: 'POST',
 			url: ajaxurl,
@@ -34,4 +34,35 @@
 			}
 		});
 	} );
+
+	$( '.cmb-flexible-add-button' ).on( 'click', function(e) {
+		e.preventDefault();
+
+		var list = $( this ).next( '.cmb-flexible-add-list' ).removeClass( 'hidden' );
+	} );
+
+	$( '.cmb-remove-flexible-row' ).on( 'click', function(e) {
+		e.preventDefault();
+
+		var button = $( this );
+		var $parent = button.closest( '.cmb-flexible-row' );
+		var newNum = $parent.data( 'groupindex' );
+		var $next = $parent.next( '.cmb-flexible-row' );
+		var prevNum = $next.data( 'groupindex' );
+		$parent.remove();
+
+		if ( $next.length > 0 ) {
+			$next.attr( 'data-groupindex', newNum );
+			$next.find( cmb.repeatEls ).each( function() {
+				var $this = $( this );
+				var name = $this.attr( 'name' );
+
+				if ( typeof name !== 'undefined' ) {
+					var $newName = name.replace( '[' + prevNum + ']', '[' + newNum + ']' );
+					$this.attr( 'name', $newName );
+				}
+			})
+		}
+	} );
+	
 })( jQuery, window.CMB2 );

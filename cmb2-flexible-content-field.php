@@ -107,11 +107,19 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 
 			echo '</div>';
 
+			echo '<div class="cmb-flexible-add">';
+			echo '<button class="cmb-flexible-add-button button button-primary">Add Group</button>';
+			echo '<ul class="cmb-flexible-add-list hidden">';
 			foreach ( $layouts as $layout_key => $layout ) {
+				echo '<li class="cmb-flexible-add-list-item">';
 				echo '<button class="cmb2-add-flexible-row" data-type="' . esc_attr( $layout_key ) . '" data-objectId="' . esc_attr( $metabox_id ) . '">' . esc_attr( $layout_key ) . '</button>';
+				echo '</li>';
 			}
+			echo '</ul>';
+			echo '</div>';
 
 			echo '</div>';
+
 
 		}
 
@@ -197,6 +205,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$index = $group->args['array_key'];
 
 			echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $index ) . '">';
+			echo '<button class="dashicons-before dashicons-no-alt cmb-remove-flexible-row" type="button" title="Remove Entry"></button>';
 			echo '<input id="' . esc_attr( $group_name ) . '[layout]" name="' . esc_attr( $group_name ) . '[layout]" value="' . esc_attr( $type ) . '" type="hidden" >';
 
 			if ( true === $override ) {

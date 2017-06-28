@@ -1,8 +1,94 @@
-.cmb-type-flexible .cmb-th, .cmb-type-flexible .cmb-th + .cmb-td {
+.cmb-type-flexible > .cmb-th, .cmb-type-flexible .cmb-th + .cmb-td {
 	float: none;
 	width: 100%;
+	max-width: 1000px;
+}
+
+.cmb-type-flexible > .cmb-th {
+	font-size: 1.2em;
+	padding-bottom: 1em;
+	font-weight: normal;
 }
 
 .cmb-type-flexible .cmb-group-title {
 	background-color: #e9e9e9;
+}
+
+.cmb-type-flexible .cmb-row:last-of-type {
+	border-bottom: inherit;
+}
+
+.cmb-flexible-add {
+	position: relative;
+}
+
+.cmb-flexible-add-list {
+	position: absolute;
+	bottom: 150%;
+	left: 0;
+	list-style-type: none;
+	background: #333;
+	padding: 0;
+	text-align: center;
+	border-radius: 3px;
+}
+
+.cmb-flexible-add-list.hidden {
+	display: none;
+}
+
+.cmb-flexible-add-list:before {
+	content: '';
+	position: absolute;
+	bottom: -5px;
+	left: 50%;
+	width: 0;
+	height: 0;
+	margin-left: -5px;
+	border-color: transparent;
+	border-style: solid;
+	border-width: 5px 5px 0;
+	border-top-color: #333;
+}
+
+.cmb-flexible-add-list button {
+	background: none;
+	border: none;
+	color: white;
+	font-weight: bold;
+	padding: 5px 25px;
+	display: block;
+	width: 100%;
+	cursor: pointer;
+}
+
+.cmb-flexible-add-list button:hover {
+	background: #777;
+}
+
+.cmb-type-flexible .cmb-flexible-row {
+	position: relative;
+	margin-bottom: 0;
+}
+
+.cmb-type-flexible .cmb-remove-flexible-row {
+	background: none;
+	border: none;
+	position: absolute;
+	left: 0;
+	top: 0.5em;
+	line-height: 1em;
+	padding: 2px 6px 3px;
+	opacity: 0.5;
+	z-index: 2;
+	cursor: pointer;
+	color: #a00;
+}
+
+.cmb-type-flexible .cmb-remove-flexible-row:hover {
+
+}
+
+.cmb-type-flexible .postbox > .cmb-group-title {
+	padding-left: 2em;
 }
