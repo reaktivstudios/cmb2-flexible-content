@@ -88,7 +88,6 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 
 			// These are the values from the fields.
 			$data = $field_type->field->value;
-
 			// Store these so they can accessed in the hook.
 			$this->stored_data = $data;
 
@@ -119,8 +118,6 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			echo '</div>';
 
 			echo '</div>';
-
-
 		}
 
 		/**
@@ -137,36 +134,91 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$array_key = absint( $object->args['array_key'] );
 				$data = $this->stored_data[ $array_key ];
 			}
-			return $data;
+
+			// Wrap the data in array so it can be picked up by subgroups.
+			return array( $data );
 		}
 
 		/**
 		 * Sanitization callback
 		 *
-		 * @param  array $override_value Value that's being overridden.
-		 * @param  array $value          Value from post object.
-		 * @param  int   $object_id      Object / field ID.
-		 * @param  array $field_args     Full list of arguments.
+		 * @param  array  $override_value    Value that's being overridden.
+		 * @param  array  $values            Value from post object.
+		 * @param  int    $object_id         Object / field ID.
+		 * @param  array  $field_args        Full list of arguments.
+		 * @param  object $sanitizer_object  Instance of CMB2_Sanitize.
 		 * @return string                Data
 		 */
-		public function save_fields( $override_value, $value, $object_id, $field_args, $sanitizer_object ) {
-			// Get the value and then sanitize it according to sanitization rules.
-			if ( ! empty( $value ) ) {
-				foreach ( $value as $group ) {
-					// Get layout matching the layout of the current group
-					$fields = $field_args['layouts'][ $group['layout'] ]['fields'];
+		public function save_fields( $override_value, $values, $object_id, $field_args, $sanitizer_object ) {
 
-					// Test each field in the group against the layout field type
-					foreach ( $fields as $field ) {
-						foreach ( $group[0] as $id => $item ) {
-							if ( $field['id'] == $id ) {
-								// Filter field type
+			if ( empty( $values ) ) {
+				return $values;
+			}
+
+			// Set up the metabox.
+			$flexible_field = $sanitizer_object->field;
+			$metabox = $flexible_field->get_cmb();
+
+			$field_id = $flexible_field->_id();
+			// The saved array is used to hold sanitized values.
+			$saved = array();
+			foreach ( $values as $i => $group_vals ) {
+
+				// Cache the type and save it in array.
+				$type = isset( $group_vals['layout'] ) ? sanitize_key( $group_vals['layout'] ) : false;
+				if ( ! $type ) {
+					continue;
+				}
+				$saved[ $i ]['layout'] = $type;
+
+				$field_group = $this->create_group( $type, $flexible_field, $i );
+				$group_id = $field_group->_id();
+				$field_group->data_to_save = array(
+					$group_id => $group_vals,
+				);
+
+				foreach ( array_values( $field_group->fields() ) as $field_args ) {
+					if ( 'title' === $field_args['type'] ) {
+						// Don't process title fields.
+						continue;
+					}
+
+					$field  = $metabox->get_field( $field_args, $field_group );
+					$sub_id = $field->id( true );
+
+					// If we flatten the array we don't need to do this.
+					foreach ( (array) $group_vals as $field_group->index => $post_vals ) {
+						$new_val = isset( $group_vals[ $field_group->index ][ $sub_id ] )
+							? $group_vals[ $field_group->index ][ $sub_id ]
+							: false;
+						$new_val = $field->sanitization_cb( $new_val );
+
+						if ( is_array( $new_val ) && $field->args( 'has_supporting_data' ) ) {
+							if ( $field->args( 'repeatable' ) ) {
+								$_new_val = array();
+								foreach ( $new_val as $group_index => $grouped_data ) {
+									// Add the supporting data to the $saved array stack.
+									$saved[ $i ][ $grouped_data['supporting_field_id'] ][] = $grouped_data['supporting_field_value'];
+									// Reset var to the actual value.
+									$_new_val[ $group_index ] = $grouped_data['value'];
+								}
+								$new_val = $_new_val;
+							} else {
+								// Add the supporting data to the $saved array stack.
+								$saved[ $i ][ $new_val['supporting_field_id'] ] = $new_val['supporting_field_value'];
+								// Reset var to the actual value.
+								$new_val = $new_val['value'];
 							}
 						}
+
+						$saved[ $i ][ $sub_id ] = $new_val;
 					}
 				}
+				$saved[ $i ] = CMB2_Utils::filter_empty( $saved[ $i ] );
 			}
-			return $value;
+			$saved = CMB2_Utils::filter_empty( $saved );
+
+			return $saved;
 		}
 
 
@@ -272,7 +324,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				'context' => 'normal',
 				'show_names' => true,
 				'options' => array(
-					'group_title' => $layout[ 'title' ],
+					'group_title' => $layout['title'],
 				),
 			) );
 
@@ -300,6 +352,11 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * @return array             Escaped value of metadata
 		 */
 		public function escape_values( $val, $meta_value ) {
+			if ( is_array( $meta_value ) && ! empty( $meta_value ) ) {
+				foreach ( $meta_value as $i => $value ) {
+					$meta_value[ $i ]['layout'] = esc_attr( $value['layout'] );
+				}
+			}
 			// Need to add a custom escaping function here.
 			// Only need to escape the layout type.
 			return $meta_value;
