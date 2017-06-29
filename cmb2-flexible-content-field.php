@@ -140,6 +140,14 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			return $data;
 		}
 
+		public function override_meta_value_2( $data, $object_id, $a, $object ) {
+			if ( isset( $object->args['array_key'] ) ) {
+				$array_key = absint( $object->args['array_key'] );
+				$data = $this->stored_data[ $array_key ];
+			}
+			return $data;
+		}
+
 		/**
 		 * Sanitization callback
 		 *
@@ -149,24 +157,123 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * @param  array $field_args     Full list of arguments.
 		 * @return string                Data
 		 */
-		public function save_fields( $override_value, $value, $object_id, $field_args, $sanitizer_object ) {
-			// Get the value and then sanitize it according to sanitization rules.
-			if ( ! empty( $value ) ) {
-				foreach ( $value as $group ) {
-					// Get layout matching the layout of the current group
-					$fields = $field_args['layouts'][ $group['layout'] ]['fields'];
+		public function save_fields( $override_value, $values, $object_id, $field_args, $sanitizer_object ) {
+			// Set up the metabox
+		    $flexible_field = $sanitizer_object->field;
+		    $metabox = $flexible_field->get_cmb();
+		    $layouts = isset( $flexible_field->args['layouts'] ) ? $flexible_field->args['layouts'] : false;
+		    $this->layouts = $layouts;
+		    if ( false === $layouts ) {
+		        // We need layouts for this to work.
+		        return false;
+		    }
 
-					// Test each field in the group against the layout field type
-					foreach ( $fields as $field ) {
-						foreach ( $group[0] as $id => $item ) {
-							if ( $field['id'] == $id ) {
-								// Filter field type
-							}
-						}
-					}
-				}
-			}
-			return $value;
+		    $this->stored_data = $values;
+		    $formatted_data = array();
+
+		    //error_log( print_r( $values, true ));
+		    // These are the values from the fields.
+		    $data = $values;
+		    $field_id = $flexible_field->_id();
+
+		    $saved = array();
+		    if ( ! empty( $data ) ) {
+		        foreach ( $data as $i => $group_vals ) {
+
+		            $type = $group_vals['layout'];
+		            $saved[ $i ]['layout'] = $type;
+		            unset( $group_vals['layout'] );
+		            $field_group = $this->create_group( $type, $flexible_field, $i );
+		            $group_id = $field_group->_id();
+		            $field_group->data_to_save = array( 
+		            	$group_id => $group_vals,
+		            );
+
+		            $flexible_data = $flexible_field->get_data();
+		            $old = array();
+
+		            if ( ! empty( $flexible_data ) ) {
+		            	foreach ( $flexible_data as $old_data ) {
+		            		$old[] = $old_data[0];
+		            	}
+		            }
+		           	//error_log( print_r( $group_values, true));
+
+		            foreach ( array_values( $field_group->fields() ) as $field_args ) {
+		            	if ( 'title' === $field_args['type'] ) {
+		            		// Don't process title fields
+		            		continue;
+		            	}
+
+		            	$field  = $metabox->get_field( $field_args, $field_group );
+		            	$sub_id = $field->id( true );
+
+		            	foreach ( (array) $group_vals as $field_group->index => $post_vals ) {
+		            		$new_val = isset( $group_vals[ $field_group->index ][ $sub_id ] )
+		            			? $group_vals[ $field_group->index ][ $sub_id ]
+		            			: false;
+		            		// error_log( print_r( $new_val, true ) );
+		            		$new_val = $field->sanitization_cb( $new_val );
+
+		            		if ( is_array( $new_val ) && $field->args( 'has_supporting_data' ) ) {
+		            			if ( $field->args( 'repeatable' ) ) {
+		            				$_new_val = array();
+		            				foreach ( $new_val as $group_index => $grouped_data ) {
+		            					// Add the supporting data to the $saved array stack
+		            					$saved[ $i ][ $grouped_data['supporting_field_id'] ][] = $grouped_data['supporting_field_value'];
+		            					// Reset var to the actual value
+		            					$_new_val[ $group_index ] = $grouped_data['value'];
+		            				}
+		            				$new_val = $_new_val;
+		            			} else {
+		            				// Add the supporting data to the $saved array stack
+		            				$saved[ $i ][ $new_val['supporting_field_id'] ] = $new_val['supporting_field_value'];
+		            				// Reset var to the actual value
+		            				$new_val = $new_val['value'];
+		            			}
+		            		}
+
+		            		$saved[ $i ][ $sub_id ] = $new_val;
+		            		
+		            	}
+
+
+
+		            	// foreach( $group_values[0] as $id => $value ) {
+		            	// 	if ( $id === $sub_id ) {
+		            	// 		// Need to make sure to submit arrays when its arrays and etc. This isn't the right way to do this.
+		            	// 		error_log( print_r( $value, true ));
+		            	// 		$new_val = $sub_field->sanitization_cb( $value );
+
+
+
+		            	// 		if ( is_array( $new_val ) && $sub_field->args( 'has_supporting_data' ) ) {
+		            	// 			if ( $field->args( 'repeatable' ) ) {
+		            	// 				$_new_val = array();
+		            	// 				foreach ( $new_val as $group_index => $grouped_data ) {
+		            	// 					// Add the supporting data to the $saved array stack
+		            	// 					$saved[ $i ][ $grouped_data['supporting_field_id'] ][] = $grouped_data['supporting_field_value'];
+		            	// 					// Reset var to the actual value
+		            	// 					$_new_val[ $group_index ] = $grouped_data['value'];
+		            	// 				}
+		            	// 				$new_val = $_new_val;
+		            	// 			} else {
+		            	// 				// Add the supporting data to the $saved array stack
+		            	// 				$saved[ $i ][0][ $new_val['supporting_field_id'] ] = $new_val['supporting_field_value'];
+		            	// 				// Reset var to the actual value
+		            	// 				$new_val = $new_val['value'];
+		            	// 			}
+		            	// 		}
+
+		            	// 		$saved[ $i ][ 0 ][ $sub_id ] = $new_val;
+		            	// 	}
+		            	// }
+		            }
+		        }
+
+		    }
+		    error_log( print_r( $saved, true ));
+		    return $values;
 		}
 
 
