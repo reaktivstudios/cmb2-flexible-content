@@ -50,7 +50,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		private function init() {
 			add_action( 'cmb2_render_flexible', array( $this, 'render_fields' ), 10, 5 );
-			add_filter( 'cmb2_sanitize_flexible', array( $this, 'save_fields' ), 12, 4 );
+			add_filter( 'cmb2_sanitize_flexible', array( $this, 'save_fields' ), 12, 5 );
 			add_filter( 'cmb2_types_esc_flexible', array( $this, 'escape_values' ), 10, 2 );
 
 			add_action( 'admin_enqueue_scripts', array( $this, 'add_scripts' ) );
@@ -107,11 +107,19 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 
 			echo '</div>';
 
+			echo '<div class="cmb-flexible-add">';
+			echo '<button class="cmb-flexible-add-button button button-primary">Add Group</button>';
+			echo '<ul class="cmb-flexible-add-list hidden">';
 			foreach ( $layouts as $layout_key => $layout ) {
-				echo '<button class="cmb2-add-flexible-row" data-type="' . esc_attr( $layout_key ) . '" data-objectId="' . esc_attr( $metabox_id ) . '">' . esc_attr( $layout_key ) . '</button>';
+				echo '<li class="cmb-flexible-add-list-item">';
+				echo '<button class="cmb2-add-flexible-row" data-type="' . esc_attr( $layout_key ) . '">' . esc_attr( $layout['title'] ) . '</button>';
+				echo '</li>';
 			}
+			echo '</ul>';
+			echo '</div>';
 
 			echo '</div>';
+
 
 		}
 
@@ -141,7 +149,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * @param  array $field_args     Full list of arguments.
 		 * @return string                Data
 		 */
-		public function save_fields( $override_value, $value, $object_id, $field_args ) {
+		public function save_fields( $override_value, $value, $object_id, $field_args, $sanitizer_object ) {
 			// Get the value and then sanitize it according to sanitization rules.
 			if ( ! empty( $value ) ) {
 				foreach ( $value as $group ) {
@@ -212,6 +220,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$index = $group->args['array_key'];
 
 			echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $index ) . '">';
+			echo '<button class="dashicons-before dashicons-no-alt cmb-remove-flexible-row" type="button" title="Remove Entry"></button>';
 			echo '<input id="' . esc_attr( $group_name ) . '[layout]" name="' . esc_attr( $group_name ) . '[layout]" value="' . esc_attr( $type ) . '" type="hidden" >';
 
 			if ( true === $override ) {
@@ -223,6 +232,12 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			if ( true === $override ) {
 				remove_filter( 'cmb2_override_' . $group_name . '_meta_value', array( $this, 'override_meta_value' ) );
 			}
+
+			echo '<div class="cmb-row cmb-remove-field-row">';
+			echo '<button class="button cmb-shift-flexible-rows move-up alignleft dashicons-before dashicons-arrow-up-alt2"></button>';
+			echo '<button class="button cmb-shift-flexible-rows move-down alignleft dashicons-before dashicons-arrow-down-alt2"></button>';
+			echo '</div>';
+
 			echo '</div>';
 		}
 
@@ -256,6 +271,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				// TODO: Set these with field defaults.
 				'context' => 'normal',
 				'show_names' => true,
+				'options' => array(
+					'group_title' => $layout[ 'title' ],
+				),
 			) );
 
 			// Foreach layout field, add a field to the group.
