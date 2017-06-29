@@ -56,20 +56,22 @@ var cmb_flexible = {};
 
 	cmb_flexible.removeFlexibleRow = function( evt ) {
 		evt.preventDefault();
-
 		var $this    = $( this );
 		var $parent  = $this.closest( '.cmb-flexible-row' );
-		var newNum   = $parent.attr( 'data-groupindex' );
-		var $next    = $parent.next( '.cmb-flexible-row' );
-		var prevNum  = $next.attr( 'data-groupindex' );
+
+
+		$parent.nextAll( '.cmb-flexible-row' ).each(function() {
+			var $next = $( this );
+			var prevNum = $( this ).attr( 'data-groupindex' );
+			cmb_flexible.updateFlexibleNames( $next, prevNum );
+		} );
 
 		$parent.remove();
-
-		cmb_flexible.updateFlexibleNames( $next, prevNum, newNum );
 	}
 
 	cmb_flexible.updateFlexibleNames = function( $el, prevNum, newNum ) {
 		if ( $el.length > 0 ) {
+			newNum = newNum || prevNum - 1;
 			$el.attr( 'data-groupindex', newNum );
 			$el.find( cmb.repeatEls ).each( function() {
 				var $this = $( this );
@@ -93,6 +95,11 @@ var cmb_flexible = {};
 		var direction = $this.hasClass( 'move-up' ) ? 'up' : 'down';
 		var $goto     = 'up' === direction ? $from.prev( '.cmb-flexible-row' ) : $from.next( '.cmb-flexible-row' );
 		var gotoNum   = $goto.attr( 'data-groupindex' );
+
+
+		if ( 'up' === direction && 0 === parseInt( fromNum ) ) {
+			return false;
+		}
 
 		if ( 'up' === direction ) {
 			$goto.before( $from );

@@ -87,7 +87,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			}
 
 			// These are the values from the fields.
-			$data = $field_type->field->value;
+			$data = $escaped_value;
 			// Store these so they can accessed in the hook.
 			$this->stored_data = $data;
 
@@ -226,7 +226,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * Add Flexible content scripts and styles
 		 */
 		public function add_scripts() {
-			wp_enqueue_script( 'cmb2-flexible-content', plugin_dir_url( __FILE__ ) . 'assets/js/cmb2-flexible.js', array( 'jquery', 'cmb2-scripts' ), '', true );
+			wp_enqueue_script( 'cmb2-flexible-content', plugin_dir_url( __FILE__ ) . 'assets/js/cmb2-flexible.js', array( 'jquery', 'cmb2-scripts' ), '0.1', true );
 			wp_enqueue_style( 'cmb2-flexible-styles', plugin_dir_url( __FILE__ ) . 'assets/css/cmb2-flexible.css', array( 'cmb2-styles' ), '0.1' );
 		}
 
