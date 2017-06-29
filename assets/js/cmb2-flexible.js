@@ -18,14 +18,14 @@ var cmb_flexible = {};
 		var $this            = $( this );
 		var metabox          = $this.closest( '.cmb2-postbox' ).attr( 'id' );
 		var flexible_group   = $this.closest( '.cmb-flexible-group' );
-		var field_id         = flexible_group.data( 'fieldid' );
+		var field_id         = flexible_group.attr( 'data-fieldid' );
 		var type             = $this.attr( 'data-type' );
 		var flexible_rows    = flexible_group.find( '.cmb-flexible-rows' ).last();
 		var latest           = flexible_group.find( '.cmb-flexible-row' ).last();
 		var latest_index;
 
 		if ( latest.length > 0 ) {
-			latest_index = latest.data( 'groupindex' ); 
+			latest_index = latest.attr( 'data-groupindex' );
 		}
 
 		$this.closest( '.cmb-flexible-add-list' ).addClass( 'hidden' );
@@ -59,9 +59,9 @@ var cmb_flexible = {};
 
 		var $this    = $( this );
 		var $parent  = $this.closest( '.cmb-flexible-row' );
-		var newNum   = $parent.data( 'groupindex' );
+		var newNum   = $parent.attr( 'data-groupindex' );
 		var $next    = $parent.next( '.cmb-flexible-row' );
-		var prevNum  = $next.data( 'groupindex' );
+		var prevNum  = $next.attr( 'data-groupindex' );
 
 		$parent.remove();
 
@@ -89,10 +89,10 @@ var cmb_flexible = {};
 
 		var $this     = $( this );
 		var $from     = $this.closest( '.cmb-flexible-row' );
-		var fromNum   = $from.data( 'groupindex' );
+		var fromNum   = $from.attr( 'data-groupindex' );
 		var direction = $this.hasClass( 'move-up' ) ? 'up' : 'down';
 		var $goto     = 'up' === direction ? $from.prev( '.cmb-flexible-row' ) : $from.next( '.cmb-flexible-row' );
-		var gotoNum   = $goto.data( 'groupindex' );
+		var gotoNum   = $goto.attr( 'data-groupindex' );
 
 		if ( 'up' === direction ) {
 			$goto.before( $from );
