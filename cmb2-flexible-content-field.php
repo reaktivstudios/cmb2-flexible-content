@@ -88,7 +88,6 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 
 			// These are the values from the fields.
 			$data = $field_type->field->value;
-
 			// Store these so they can accessed in the hook.
 			$this->stored_data = $data;
 
@@ -135,7 +134,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$array_key = absint( $object->args['array_key'] );
 				$data = $this->stored_data[ $array_key ];
 			}
-			return $data;
+
+			// Wrap the data in array so it can be picked up by subgroups.
+			return array( $data );
 		}
 
 		/**
@@ -197,23 +198,23 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 								$_new_val = array();
 								foreach ( $new_val as $group_index => $grouped_data ) {
 									// Add the supporting data to the $saved array stack.
-									$saved[ $i ][0][ $grouped_data['supporting_field_id'] ][] = $grouped_data['supporting_field_value'];
+									$saved[ $i ][ $grouped_data['supporting_field_id'] ][] = $grouped_data['supporting_field_value'];
 									// Reset var to the actual value.
 									$_new_val[ $group_index ] = $grouped_data['value'];
 								}
 								$new_val = $_new_val;
 							} else {
 								// Add the supporting data to the $saved array stack.
-								$saved[ $i ][0][ $new_val['supporting_field_id'] ] = $new_val['supporting_field_value'];
+								$saved[ $i ][ $new_val['supporting_field_id'] ] = $new_val['supporting_field_value'];
 								// Reset var to the actual value.
 								$new_val = $new_val['value'];
 							}
 						}
 
-						$saved[ $i ][0][ $sub_id ] = $new_val;
+						$saved[ $i ][ $sub_id ] = $new_val;
 					}
 				}
-				$saved[ $i ][0] = CMB2_Utils::filter_empty( $saved[ $i ][0] );
+				$saved[ $i ] = CMB2_Utils::filter_empty( $saved[ $i ] );
 			}
 			$saved = CMB2_Utils::filter_empty( $saved );
 
