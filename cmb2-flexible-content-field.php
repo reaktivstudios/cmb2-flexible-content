@@ -79,6 +79,9 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$metabox_id = $metabox->cmb_id;
 			$layouts = isset( $field->args['layouts'] ) ? $field->args['layouts'] : false;
 
+			// Add all possible dependencies for right now.
+			$dependencies = $this->get_dependencies( $layouts );
+			$field->add_js_dependencies( $dependencies );
 			$this->layouts = $layouts;
 
 			if ( false === $layouts ) {
@@ -118,6 +121,52 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			echo '</div>';
 
 			echo '</div>';
+		}
+
+		/**
+		 * Retrieves a list of JS dependencies based on file types.
+		 *
+		 * These are then added to the parent fields list of dependencies so that they are included at output.
+		 *
+		 * @param  array $layouts List of layouts.
+		 * @return array          List of dependencies
+		 */
+		public function get_dependencies( $layouts ) {
+			$dependencies = array();
+			foreach ( $layouts as $layout ) {
+				foreach ( $layout['fields'] as $field ) {
+					switch ( $field['type'] ) {
+						case 'colorpicker':
+							wp_enqueue_style( 'wp-color-picker' );
+							$dependencies[] = 'wp-color-picker';
+							break;
+						case 'file':
+						case 'file_list':
+							$dependencies[] = 'media-editor';
+							break;
+						case 'text_date':
+						case 'text_time':
+						case 'text_datetime_timestamp':
+							$dependencies[] = 'jquery-ui-core';
+							$dependencies[] = 'jquery-ui-datepicker';
+							break;
+						case 'text_datetime_timestamp':
+						case 'text_time':
+							$dependencies[] = 'jquery-ui-datetimepicker';
+							break;
+						case 'wysiwyg':
+							$dependencies[] = 'wp-util';
+							$dependencies[] = 'cmb2-wysiwyg';
+							break;
+					}
+				}
+			}
+
+			if ( ! empty( $dependencies ) ) {
+				$dependencies = array_unique( $dependencies );
+			}
+
+			return $dependencies;
 		}
 
 		/**
@@ -329,13 +378,8 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			) );
 
 			// Foreach layout field, add a field to the group.
-			foreach ( $layout['fields'] as $subfield ) {
-				$subfield_args = array(
-					'id' => $subfield['id'],
-					'type' => $subfield['type'],
-					'name' => $subfield['name'],
-					'array_key' => absint( $index ),
-				);
+			foreach ( $layout['fields'] as $subfield_args ) {
+				$subfield_args['array_key'] = absint( $index );
 				$subfield_id = $metabox->add_group_field( $group_name, $subfield_args );
 			}
 
