@@ -44,7 +44,12 @@ var cmb_flexible = {};
 
 			success: function( response ) {
 				var el = response.data;
-				flexible_rows.append( el );
+				var newRow = flexible_rows.append( el );
+
+				// Initialize CMB at the end so that JS hooks work correctly.
+				cmb.newRowHousekeeping( newRow );
+				cmb.afterRowInsert( newRow );
+
 			}
 		});
 	}
