@@ -32,6 +32,11 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 */
 		protected $stored_data;
 
+		/**
+		 * Holds an array of wysiwyg fields so templates can be output
+		 *
+		 * @var array
+		 */
 		protected $wysiwygs = array();
 
 		/**
@@ -275,7 +280,6 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$saved[ $i ] = CMB2_Utils::filter_empty( $saved[ $i ] );
 			}
 			$saved = CMB2_Utils::filter_empty( $saved );
-
 
 			return $saved;
 		}
