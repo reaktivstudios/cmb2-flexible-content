@@ -49,7 +49,7 @@ var cmb_flexible = {};
 				// Initialize CMB at the end so that JS hooks work correctly.
 				cmb.newRowHousekeeping( newRow );
 				cmb.afterRowInsert( newRow );
-
+				window.CMB2.wysiwyg.initAll()
 			}
 		});
 	}
