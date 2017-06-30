@@ -143,20 +143,26 @@ var cmb_flexible = {};
 
 	cmb_flexible.setWysiwygRow = function( $el ) {
 		var wysiwyg = $el.find( '.wp-editor-wrap textarea' );
-		var wysiwyg_id = wysiwyg.attr( 'id' );
 
-		if ( tinyMCEPreInit.mceInit[ wysiwyg_id ] ) {
-			window.CMB2.wysiwyg.initRow( $el );
-		} else {
-			var $toReplace = wysiwyg.closest( '.cmb2-wysiwyg-inner-wrap' );
-			data          = $toReplace.data();
-			data.fieldid  = data.id;
-			data.id       = data.groupid + '_' + data.iterator + '_' + data.fieldid;
-			data.name     = data.groupid + '[' + data.iterator + '][' + data.fieldid + ']';
-			data.value    = $toReplace.find( '.wp-editor-area' ).length ? $toReplace.find( '.wp-editor-area' ).val() : '';
+		if ( wysiwyg.length > 0 ) {
 
-			cmb_flexible.initWysiwyg( $toReplace, data );
+			var wysiwyg_id = wysiwyg.attr( 'id' );
+
+			if ( tinyMCEPreInit.mceInit[ wysiwyg_id ] ) {
+				window.CMB2.wysiwyg.initRow( $el );
+			} else {
+				var $toReplace = wysiwyg.closest( '.cmb2-wysiwyg-inner-wrap' );
+				data          = $toReplace.data();
+				data.fieldid  = data.id;
+				data.id       = data.groupid + '_' + data.iterator + '_' + data.fieldid;
+				data.name     = data.groupid + '[' + data.iterator + '][' + data.fieldid + ']';
+				data.value    = $toReplace.find( '.wp-editor-area' ).length ? $toReplace.find( '.wp-editor-area' ).val() : '';
+
+				cmb_flexible.initWysiwyg( $toReplace, data );
+			}
+
 		}
+
 	}
 
 	cmb_flexible.initWysiwyg = function( $toReplace, data ) {

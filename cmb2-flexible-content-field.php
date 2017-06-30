@@ -354,22 +354,18 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			echo '<button class="button cmb-shift-flexible-rows move-down alignleft dashicons-before dashicons-arrow-down-alt2"></button>';
 			echo '</div>';
 
-			echo '</div>';
-
 			if ( false === $override && ! empty( $this->wysiwygs ) ) {
-				foreach ( $this->wysiwygs as $wysiwyg ) {
-					// $types = new CMB2_Types( $wysiwyg );
-					// $wysiwyg_type = $types->get_new_render_type( 'wysiwyg', 'CMB2_Type_Wysiwyg', $subfield_args );
-					//error_log( print_r( $wysiwyg, true ));
-
-					//$wysiwyg->add_wysiwyg_template_for_group();
-					$wysiwyg['group']->index = 0;
-					$wysiwyg_field = $metabox->get_field( $wysiwyg['args'], $wysiwyg['group'] );
+				foreach ( $this->wysiwygs as $wysiwyg_id => $field_group ) {
+					$field_group->index = 0;
+					$wysiwyg_field = $metabox->get_field( $wysiwyg_id, $field_group );
 					$types = new CMB2_Types( $wysiwyg_field );
-					$wysiwyg_type = $types->get_new_render_type( 'wysiwyg', 'CMB2_Type_Wysiwyg', $wysiwyg['args'] );
+					$wysiwyg_type = $types->get_new_render_type( 'wysiwyg', 'CMB2_Type_Wysiwyg', array() );
 					$wysiwyg_type->add_wysiwyg_template_for_group();
 				}
 			}
+
+			echo '</div>';
+
 		}
 
 		/**
@@ -413,16 +409,8 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$subfield_id = $metabox->add_group_field( $group_name, $subfield_args );
 
 				if ( 'wysiwyg' === $subfield_args['type'] ) {
-
 					$group = $metabox->get_field( $group_name );
-					$this->wysiwygs[] = array(
-						'group' => $group,
-						'args' => $subfield_args,
-					);
-					// $wysiwyg = $metabox->get_field( $subfield_args, $group );
-					// $types = new CMB2_Types( $wysiwyg );
-					// $this->wysiwygs[] = $types->get_new_render_type( 'wysiwyg', 'CMB2_Type_Wysiwyg', $subfield_args );
-
+					$this->wysiwygs[ $subfield_args['id'] ] = $group;
 				}
 			}
 
