@@ -30,6 +30,8 @@ var cmb_flexible = {};
 
 		$this.closest( '.cmb-flexible-add-list' ).addClass( 'hidden' );
 
+		$( flexible_group ).css( { opacity: 0.5 } );
+
 		$.ajax({
 			method: 'POST',
 			url: ajaxurl,
@@ -43,8 +45,24 @@ var cmb_flexible = {};
 			},
 
 			success: function( response ) {
+				$( flexible_group ).css( { opacity: 1 } );
 				var el = response.data;
-				flexible_rows.append( el );
+				var newRow = flexible_rows.append( el );
+
+				// Initialize CMB at the end so that JS hooks work correctly.
+				cmb.newRowHousekeeping( newRow );
+				cmb.afterRowInsert( newRow );
+
+				$( newRow ).find( '.cmb2-wysiwyg-placeholder' ).each( function() {
+					$this = $( this );
+					data  = $this.data();
+
+					data.id    = $this.attr( 'id' );
+					data.name  = $this.attr( 'name' );
+					data.value = '';
+
+					cmb_flexible.initWysiwyg( $this, data );
+				});
 			}
 		});
 	}
@@ -65,6 +83,8 @@ var cmb_flexible = {};
 			var prevNum = $( this ).attr( 'data-groupindex' );
 			cmb_flexible.updateFlexibleNames( $next, prevNum );
 		} );
+
+		window.CMB2.wysiwyg.destroy( $parent.find( '.wp-editor-area' ).attr( 'id' ) );
 
 		$parent.remove();
 	}
@@ -96,6 +116,10 @@ var cmb_flexible = {};
 		var $goto     = 'up' === direction ? $from.prev( '.cmb-flexible-row' ) : $from.next( '.cmb-flexible-row' );
 		var gotoNum   = $goto.attr( 'data-groupindex' );
 
+		$from.find( '.wp-editor-wrap textarea' ).each( function() {
+			window.CMB2.wysiwyg.destroy( $( this ).attr( 'id' ) );
+		} );
+
 
 		if ( 'up' === direction && 0 === parseInt( fromNum ) ) {
 			return false;
@@ -111,7 +135,60 @@ var cmb_flexible = {};
 
 		cmb_flexible.updateFlexibleNames( $from, fromNum, gotoNum );
 		cmb_flexible.updateFlexibleNames( $goto, gotoNum, fromNum );
+
+		$from.each( function() {
+			cmb_flexible.setWysiwygRow( $( this ) );
+		} );
 	}
+
+	cmb_flexible.setWysiwygRow = function( $el ) {
+		var wysiwyg = $el.find( '.wp-editor-wrap textarea' );
+
+		if ( wysiwyg.length > 0 ) {
+
+			var wysiwyg_id = wysiwyg.attr( 'id' );
+
+			if ( tinyMCEPreInit.mceInit[ wysiwyg_id ] ) {
+				window.CMB2.wysiwyg.initRow( $el );
+			} else {
+				var $toReplace = wysiwyg.closest( '.cmb2-wysiwyg-inner-wrap' );
+				data          = $toReplace.data();
+				data.fieldid  = data.id;
+				data.id       = data.groupid + '_' + data.iterator + '_' + data.fieldid;
+				data.name     = data.groupid + '[' + data.iterator + '][' + data.fieldid + ']';
+				data.value    = $toReplace.find( '.wp-editor-area' ).length ? $toReplace.find( '.wp-editor-area' ).val() : '';
+
+				cmb_flexible.initWysiwyg( $toReplace, data );
+			}
+
+		}
+
+	}
+
+	cmb_flexible.initWysiwyg = function( $toReplace, data ) {
+		var mceData = tinyMCEPreInit.mceInit.content;
+		mceData.selector = '#' + data.id;
+
+		var qtData = tinyMCEPreInit.qtInit.content;
+		qtData.id = data.id;
+		$.extend( data, {
+			template: wp.template( 'cmb2-wysiwyg-' + data.groupid + '-' + data.fieldid ),
+			defaults: {
+				mce: mceData,
+				qt: qtData,
+			}
+		} );
+
+		$toReplace.replaceWith( data.template( data ) );
+		window.tinyMCE.init( mceData );
+
+		if ( 'function' === typeof window.quicktags ) {
+			window.quicktags( qtData );
+		}
+
+		$( document.getElementById( data.id ) ).parents( '.wp-editor-wrap' ).removeClass( 'html-active' ).addClass( 'tmce-active' );
+	}
+
 
 	$( cmb_flexible.init );
 })( jQuery, window.CMB2 );
