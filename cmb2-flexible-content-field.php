@@ -33,6 +33,13 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		protected $stored_data;
 
 		/**
+		 * Holds an array of wysiwyg fields so templates can be output
+		 *
+		 * @var array
+		 */
+		protected $wysiwygs = array();
+
+		/**
 		 * Set up static instance of class
 		 *
 		 * @return class RKV_CMB2_Flexible_Content_Field instance
@@ -102,8 +109,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				foreach ( $data as $i => $group_details ) {
 					$type = $group_details['layout'];
 					$group = $this->create_group( $type, $field, $i );
-
-					$this->render_group( $metabox, $group, $type, true );
+					$this->render_group( $metabox, $field_id, $group, $type, true );
 				}
 			}
 
@@ -204,6 +210,14 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				return $values;
 			}
 
+			$stored_values = array();
+
+			foreach ( $values as $value_index => $post_id ) {
+				$stored_values[] = $_POST[ $post_id ];
+			}
+
+			$values = $stored_values;
+
 			// Set up the metabox.
 			$flexible_field = $sanitizer_object->field;
 			$metabox = $flexible_field->get_cmb();
@@ -300,7 +314,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$group = $this->create_group( $type, $field, $index );
 
 			ob_start();
-			$this->render_group( $metabox, $group, $type );
+			$this->render_group( $metabox, $field->_id(), $group, $type );
 			$output = ob_get_clean();
 
 			wp_send_json_success( $output );
@@ -316,12 +330,17 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * @param  string  $type     Layout type.
 		 * @param  boolean $override Should the layout field be added.
 		 */
-		public function render_group( $metabox, $group, $type, $override = false ) {
+		public function render_group( $metabox, $field_id, $group, $type, $override = false ) {
 			$group_name = $group->_id();
 			$index = $group->args['array_key'];
+			$field_key = $field_id . '[' . $index . ']';
 
 			echo '<div class="cmb-row cmb-flexible-row" data-groupid="' . esc_attr( $group_name ) . '" data-groupindex="' . absint( $index ) . '">';
+
 			echo '<button class="dashicons-before dashicons-no-alt cmb-remove-flexible-row" type="button" title="Remove Entry"></button>';
+			
+			echo '<input type="hidden" id="' . esc_attr( $field_key )  . '" name="' . esc_attr( $field_key ) . '" value="' . esc_attr( $group_name ) . '">';
+
 			echo '<input id="' . esc_attr( $group_name ) . '[layout]" name="' . esc_attr( $group_name ) . '[layout]" value="' . esc_attr( $type ) . '" type="hidden" >';
 
 			if ( true === $override ) {
@@ -339,7 +358,18 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			echo '<button class="button cmb-shift-flexible-rows move-down alignleft dashicons-before dashicons-arrow-down-alt2"></button>';
 			echo '</div>';
 
+			if ( false === $override && ! empty( $this->wysiwygs ) ) {
+				foreach ( $this->wysiwygs as $wysiwyg_id => $field_group ) {
+					$field_group->index = 0;
+					$wysiwyg_field = $metabox->get_field( $wysiwyg_id, $field_group );
+					$types = new CMB2_Types( $wysiwyg_field );
+					$wysiwyg_type = $types->get_new_render_type( 'wysiwyg', 'CMB2_Type_Wysiwyg', array() );
+					$wysiwyg_type->add_wysiwyg_template_for_group();
+				}
+			}
+
 			echo '</div>';
+
 		}
 
 		/**
@@ -363,7 +393,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			// Create a new group that will hold the layout group.
 			// Make sure to define the ID as an array so that it is passed to the sanitization callback
 			// The array_key should be defined on both main group field and all subfields.
-			$group_id = $field_id . '[' . $index . ']';
+			$group_id = $field_id . '_' . $index;
 			$group_name = $metabox->add_field( array(
 				'id' => $group_id,
 				'type' => 'group',
@@ -381,6 +411,11 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			foreach ( $layout['fields'] as $subfield_args ) {
 				$subfield_args['array_key'] = absint( $index );
 				$subfield_id = $metabox->add_group_field( $group_name, $subfield_args );
+
+				if ( 'wysiwyg' === $subfield_args['type'] ) {
+					$group = $metabox->get_field( $group_name );
+					$this->wysiwygs[ $subfield_args['id'] ] = $group;
+				}
 			}
 
 			// Set some necessary defaults.
