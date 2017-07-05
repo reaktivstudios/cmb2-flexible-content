@@ -84,11 +84,16 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			// These are the values from the fields.
 			$data = $escaped_value;
 
+			// This caches group attributes before the group is created, so that when options are set in add_subfields, they are applied.
+			// Can be replaced with set_options when that is released.
+			$field->set_prop( 'repeatable', true );
+			$group_attributes = $metabox->group_wrap_attributes( $field );
+
 			$group = $this->create_group( $field );
 
 			// Use the new PR to figure this whole thing out.
 			// Or just cache attributes for now.
-			echo '<div class="cmb-row cmb-repeat-group-wrap ', esc_attr( $group->row_classes() ), '" data-fieldtype="flexible"><div class="cmb-td"><div data-groupid="', esc_attr( $group->id() ), '" id="', esc_attr( $group->id() ), '_repeat" ', $metabox->group_wrap_attributes( $group ), '>';
+			echo '<div class="cmb-row cmb-repeat-group-wrap ', esc_attr( $group->row_classes() ), '" data-fieldtype="flexible"><div class="cmb-td"><div data-groupid="', esc_attr( $group->id() ), '" id="', esc_attr( $group->id() ), '_repeat" ', $group_attributes, '>';
 
 			echo '<div class="cmb-flexible-rows">';
 			if ( ! empty( $data ) ) {
@@ -392,7 +397,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$group_args['options'] = array(
 					'group_title' => $layout['title'],
 				);
-				$field = $field->get_field_clone( $group_args );
+				$field->set_prop( 'options', $group_args['options'] );
 			}
 
 			$metabox->add_field( $group_args );
