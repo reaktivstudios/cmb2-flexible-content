@@ -1,0 +1,20 @@
+{
+    "name": "reaktivstudios/cmb2-flexible-content",
+    "description": "A flexible content field for CMB2.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0",
+    "homepage": "https://github.com/reaktivstudios/cmb2-flexible-content",
+    "authors": [
+        {
+            "name": "Reaktiv Studios",
+            "email": "info@reaktivstudios.com",
+            "homepage": "https://github.com/reaktivstudios"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/reaktivstudios/cmb2-flexible-content"
+    },
+    "require": {
+        "php": ">=5.3.0"
+    }
+}
