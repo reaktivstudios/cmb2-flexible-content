@@ -1,6 +1,9 @@
 var cmb_flexible = {};
+window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 
 (function( $, cmb ) {
+
+	var l10n = window.cmb2_l10 || {};
 
 	cmb_flexible.init = function() {
 		var $metabox = cmb.metabox();
@@ -8,8 +11,32 @@ var cmb_flexible = {};
 		$metabox
 			.on( 'click', '.cmb2-add-flexible-row',   cmb_flexible.addFlexibleRow )
 			.on( 'click', '.cmb-flexible-add-button', cmb_flexible.removeFlexibleHiddenClass )
-			.on( 'click', '.cmb-remove-flexible-row', cmb_flexible.removeFlexibleRow )
-			.on( 'click', '.cmb-shift-flexible-rows', cmb_flexible.shiftRows );
+			.on( 'click', '.cmb-shift-flexible-rows', cmb_flexible.shiftRows )
+			.on( 'cmb2_remove_row', cmb_flexible.removeDisabledRows )
+			.on( 'click', '.cmb-flexible-rows .cmb-remove-group-row', cmb_flexible.removeLastRow );
+
+		$( '.cmb-flexible-wrap' ).find( '.cmb-repeatable-grouping' ).each( function() {
+				$( this ).find( '.button.cmb-remove-group-row' ).before( '<a class="button cmb-shift-flexible-rows move-up alignleft" href="#"><span class="'+ l10n.up_arrow_class +'"></span></a> <a class="button cmb-shift-flexible-rows move-down alignleft" href="#"><span class="'+ l10n.down_arrow_class +'"></span></a>' );
+		} );
+	}
+
+	cmb_flexible.removeDisabledRows = function( evt ) {
+		var $el = $( evt.target );
+		if (  $el.find( '.cmb-flexible-rows' ).length > 0 ) {
+			$el.find( '.cmb-remove-group-row' ).prop( 'disabled', false );
+		}
+	}
+
+	cmb_flexible.removeLastRow = function() {
+		var el = $(document).find( this );
+
+		// Make sure to eliminate the final group if it exists.
+		if ( el.length > 0 ) {
+			var $this   = $( this );
+			var $table  = $( document.getElementById( $this.data( 'selector' ) ) );
+			var $parent = $this.parents( '.cmb-repeatable-grouping' );
+			$parent.remove();
+		}
 	}
 
 	cmb_flexible.addFlexibleRow = function( evt ) {
@@ -17,15 +44,17 @@ var cmb_flexible = {};
 
 		var $this            = $( this );
 		var metabox          = $this.closest( '.cmb2-postbox' ).attr( 'id' );
-		var flexible_group   = $this.closest( '.cmb-flexible-group' );
-		var field_id         = flexible_group.attr( 'data-fieldid' );
+		var flexible_group   = $this.closest( '.cmb-repeatable-group' );
+		var flexible_wrap    = flexible_group.find( '.cmb-flexible-rows' ).last();
+		var field_id         = flexible_group.attr( 'data-groupid' );
 		var type             = $this.attr( 'data-type' );
-		var flexible_rows    = flexible_group.find( '.cmb-flexible-rows' ).last();
-		var latest           = flexible_group.find( '.cmb-flexible-row' ).last();
+		var latest           = flexible_group.find('.cmb-repeatable-grouping').last();
 		var latest_index;
 
+		$( flexible_wrap ).css( { opacity: 0.5 } );
+
 		if ( latest.length > 0 ) {
-			latest_index = latest.attr( 'data-groupindex' );
+			latest_index = latest.attr( 'data-iterator' );
 		}
 
 		$this.closest( '.cmb-flexible-add-list' ).addClass( 'hidden' );
@@ -44,12 +73,28 @@ var cmb_flexible = {};
 
 			success: function( response ) {
 				var el = response.data;
-				var newRow = flexible_rows.append( el );
-
-				// Initialize CMB at the end so that JS hooks work correctly.
+				flexible_wrap.append( el.output );
+				var newRow = flexible_wrap.find( '.cmb-repeatable-grouping' ).last();
 				cmb.newRowHousekeeping( newRow );
 				cmb.afterRowInsert( newRow );
-				window.CMB2.wysiwyg.initAll()
+				$( newRow ).find( '.button.cmb-remove-group-row' ).before( '<a class="button cmb-shift-flexible-rows move-up alignleft" href="#"><span class="'+ l10n.up_arrow_class +'"></span></a> <a class="button cmb-shift-flexible-rows move-down alignleft" href="#"><span class="'+ l10n.down_arrow_class +'"></span></a>' );
+				$( newRow ).find( '.cmb2-wysiwyg-placeholder' ).each( function() {
+					$this = $( this );
+					data  = $this.data();
+
+					if ( data.groupid ) {
+
+						data.id    = $this.attr( 'id' );
+						data.name  = $this.attr( 'name' );
+						data.value = $this.val();
+						window.CMB2.wysiwyg.init( $this, data, false );
+						if ( 'undefined' !== typeof window.QTags ) {
+							window.QTags._buttonsInit();
+						}
+					}
+				} );
+
+				$( flexible_wrap ).css( { opacity: 1 } );
 			}
 		});
 	}
@@ -59,25 +104,9 @@ var cmb_flexible = {};
 		var list = $( this ).next( '.cmb-flexible-add-list' ).removeClass( 'hidden' );
 	}
 
-	cmb_flexible.removeFlexibleRow = function( evt ) {
-		evt.preventDefault();
-		var $this    = $( this );
-		var $parent  = $this.closest( '.cmb-flexible-row' );
-
-
-		$parent.nextAll( '.cmb-flexible-row' ).each(function() {
-			var $next = $( this );
-			var prevNum = $( this ).attr( 'data-groupindex' );
-			cmb_flexible.updateFlexibleNames( $next, prevNum );
-		} );
-
-		$parent.remove();
-	}
-
 	cmb_flexible.updateFlexibleNames = function( $el, prevNum, newNum ) {
 		if ( $el.length > 0 ) {
 			newNum = newNum || prevNum - 1;
-			$el.attr( 'data-groupindex', newNum );
 			$el.find( cmb.repeatEls ).each( function() {
 				var $this = $( this );
 				var name = $this.attr( 'name' );
@@ -95,16 +124,19 @@ var cmb_flexible = {};
 		evt.preventDefault();
 
 		var $this     = $( this );
-		var $from     = $this.closest( '.cmb-flexible-row' );
-		var fromNum   = $from.attr( 'data-groupindex' );
+		var $from     = $this.closest( '.cmb-repeatable-grouping' );
+		var fromNum   = $from.attr( 'data-iterator' );
 		var direction = $this.hasClass( 'move-up' ) ? 'up' : 'down';
-		var $goto     = 'up' === direction ? $from.prev( '.cmb-flexible-row' ) : $from.next( '.cmb-flexible-row' );
-		var gotoNum   = $goto.attr( 'data-groupindex' );
-
+		var $goto     = 'up' === direction ? $from.prev( '.cmb-repeatable-grouping' ) : $from.next( '.cmb-repeatable-grouping' );
+		var gotoNum   = $goto.attr( 'data-iterator' );
 
 		if ( 'up' === direction && 0 === parseInt( fromNum ) ) {
 			return false;
 		}
+
+		$from.add($goto).find( '.wp-editor-wrap textarea' ).each( function() {
+			window.CMB2.wysiwyg.destroy( $( this ).attr( 'id' ) );
+		} );
 
 		if ( 'up' === direction ) {
 			$goto.before( $from );
@@ -116,6 +148,18 @@ var cmb_flexible = {};
 
 		cmb_flexible.updateFlexibleNames( $from, fromNum, gotoNum );
 		cmb_flexible.updateFlexibleNames( $goto, gotoNum, fromNum );
+
+		var $table = $this.closest( '.cmb-repeatable-group' );
+		$table.find( '.cmb-repeatable-grouping' ).each( function( rowindex ) {
+			var $row = $( this );
+			$row.data( 'iterator', rowindex );
+			$row.attr( 'data-iterator', rowindex );
+		} );
+
+		$from.add( $goto ).each(function() {
+			window.CMB2.wysiwyg.initRow( $( this ) );
+		} );
+
 	}
 
 	$( cmb_flexible.init );
