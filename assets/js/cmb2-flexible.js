@@ -22,7 +22,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 		$( '.cmb-flexible-wrap' ).find( '.cmb-repeatable-grouping' ).each( function() {
 				$( this ).find( '.button.cmb-remove-group-row' ).before( '<a class="button cmb-shift-flexible-rows move-up alignleft" href="#"><span class="'+ l10n.up_arrow_class +'"></span></a> <a class="button cmb-shift-flexible-rows move-down alignleft" href="#"><span class="'+ l10n.down_arrow_class +'"></span></a>' );
 		} );
-	}
+	};
 
 	/**
 	 * Make sure no rows in flexible fields are set to disabled
@@ -36,7 +36,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 			$el.find( '.cmb-remove-group-row' ).prop( 'disabled', false );
 			cmb_flexible.resetIterators( $el );
 		}
-	}
+	};
 
 	/**
 	 * Add the ability to remove all rows for flexible content fields.
@@ -51,7 +51,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 			var $parent = $this.parents( '.cmb-repeatable-grouping' );
 			$parent.remove();
 		}
-	}
+	};
 
 	/**
 	 * Send an AJAX request for a new field and then add it to the DOM.
@@ -119,7 +119,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 				$( flexible_wrap ).css( { opacity: 1 } );
 			}
 		});
-	}
+	};
 
 	/**
 	 * Show list of types on click.
@@ -129,7 +129,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 	cmb_flexible.removeFlexibleHiddenClass = function( evt ) {
 		evt.preventDefault();
 		var list = $( this ).next( '.cmb-flexible-add-list' ).toggleClass( 'hidden' );
-	}
+	};
 
 	/**
 	 * Sort through inputs and change the name attributes depending
@@ -153,7 +153,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 				}
 			} );
 		}
-	}
+	};
 
 	/**
 	 * Shift Rows by switching them in the DOM.
@@ -195,7 +195,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 			window.CMB2.wysiwyg.initRow( $( this ) );
 		} );
 
-	}
+	};
 
 	/**
 	 * We use both the data-iterator attribute to shift rows,
@@ -210,7 +210,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 			$row.data( 'iterator', rowindex );
 			$row.attr( 'data-iterator', rowindex );
 		} );
-	}
+	};
 
 	$( cmb_flexible.init );
 })( jQuery, window.CMB2 );
