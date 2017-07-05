@@ -91,9 +91,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 
 			$group = $this->create_group( $field );
 
-			// Use the new PR to figure this whole thing out.
-			// Or just cache attributes for now.
-			echo '<div class="cmb-row cmb-repeat-group-wrap ', esc_attr( $group->row_classes() ), '" data-fieldtype="flexible"><div class="cmb-td"><div data-groupid="', esc_attr( $group->id() ), '" id="', esc_attr( $group->id() ), '_repeat" ', $group_attributes, '>';
+			echo '<div class="cmb-row cmb-repeat-group-wrap ', esc_attr( $group->row_classes() ), '" data-fieldtype="flexible"><div class="cmb-td"><div data-groupid="', esc_attr( $group->id() ), '" id="', esc_attr( $group->id() ), '_repeat" ', $metabox->group_wrap_attributes( $group ), '>';
 
 			echo '<div class="cmb-flexible-rows">';
 			if ( ! empty( $data ) ) {
@@ -202,7 +200,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 			$field_group = $flexible_field->get_field_clone( $group_args );
 			$field_group->data_to_save = $values;
 
-			// The saved array is used to hold sanitized values.
+			// // The saved array is used to hold sanitized values.
 			$saved = array();
 			foreach ( $values as $i => $group_vals ) {
 
@@ -258,7 +256,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 		 * Add Flexible content scripts and styles
 		 */
 		public function add_scripts() {
-			wp_enqueue_script( 'cmb2-flexible-content', plugin_dir_url( __FILE__ ) . 'assets/js/cmb2-flexible.js', array( 'jquery', 'cmb2-scripts' ), '0.1.1', true );
+			wp_enqueue_script( 'cmb2-flexible-content', plugin_dir_url( __FILE__ ) . 'assets/js/cmb2-flexible.js', array( 'jquery', 'cmb2-scripts' ), '0.1', true );
 			wp_enqueue_style( 'cmb2-flexible-styles', plugin_dir_url( __FILE__ ) . 'assets/css/cmb2-flexible.css', array( 'cmb2-styles' ), '0.1' );
 		}
 
