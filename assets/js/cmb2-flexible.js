@@ -1,4 +1,5 @@
 var cmb_flexible = {};
+window.CMB2 = window.CMB2 || {};
 window.CMB2.wysiwyg = window.CMB2.wysiwyg || false;
 
 (function( $, cmb ) {
