@@ -390,7 +390,7 @@ if ( ! class_exists( 'RKV_CMB2_Flexible_Content_Field', false ) ) {
 				$group_args['options'] = array(
 					'group_title' => $layout['title'],
 				);
-				$field->set_prop( 'options', $group_args['options'] );
+				$field = $field->get_field_clone( $group_args );
 			}
 
 			$metabox->add_field( $group_args );
