@@ -2,7 +2,7 @@
 
 The CMB2 Flexible Field allows the creation of group layouts, which can then be selected and switched between by a user. Each layout group contains a set of existing CMB2 fields, defined in an array in the field setup. These layout groups are then toggleable, sortable and repeatable.
 
-![screenshot-1.png](Screenshot)
+![Screenshot of UI](screenshot-1.png)
 
 The data itself is saved to the field's ID in a serialized and iterable array with the layout group ID attached.
 
