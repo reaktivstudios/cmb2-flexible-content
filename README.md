@@ -70,9 +70,9 @@ Flexible fields are stored in a single meta key, and can be retrieved using the 
 ```
 $flexible_fields = get_post_meta( $post_id, 'flexible_field_name', true );
 foreach( $flexible_fields as $field ) {
-    if ( 'text' === $field['layout'] ) {
-        echo '<h2>' . $field['title'] . '</h2>';
-        echo $field['description'];
+    if ( 'text' === $field['layout'] ) { ?>
+        <h2><?php echo esc_html( $field['title'] ); ?></h2>
+        <?php echo esc_html( $field['description'] );
     }
 }
 ```
